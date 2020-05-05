@@ -1,0 +1,150 @@
+<html>
+
+<head>
+<meta charset="UTF-8">
+<script src="jquery-3.5.1.min">
+</script>
+<script src="base64.js"></script>
+<title>
+观点一致匹配器（demo）
+</title>
+
+</head>
+<body>
+<text>
+我的观点列表（每行一个）：
+<br>
+<textarea cols="25" rows="5" id="opinions"></textarea>
+<br>
+我的密钥（不要告诉对方和其他人）:
+<br>
+<input type="text" size="10" id="key">
+<br>
+<button onclick="bt1()">以上填好了</button><br>
+一号密文（发给对方）：
+<br>
+<textarea cols="25" rows="5" id="ciph1"></textarea>
+<br>
+一号密文（从对方接收）：
+<br>
+<textarea cols="25" rows="5" id="ciph2"></textarea>
+<br>
+<button onclick="bt2()">以上填好了</button>
+<br>
+二号密文（发给对方）：
+<br>
+<textarea cols="25" rows="5" id="ciph3"></textarea>
+<br>
+二号密文（从对方接收）：
+<br>
+<textarea cols="25" rows="5" id="ciph4"></textarea>
+<br>
+<button onclick="bt3()">以上填好了</button>
+<br>
+比对结果:
+<br>
+<span id="result"></span>
+
+</body>
+<script>
+window.onload=function(){
+
+}
+function s2b(str) {  
+    var bytes = new Array();  
+    var len, c;  
+    len = str.length;  
+    for(var i = 0; i < len; i++) {  
+        c = str.charCodeAt(i);  
+        if(c >= 0x010000 && c <= 0x10FFFF) {  
+            bytes.push(((c >> 18) & 0x07) | 0xF0);  
+            bytes.push(((c >> 12) & 0x3F) | 0x80);  
+            bytes.push(((c >> 6) & 0x3F) | 0x80);  
+            bytes.push((c & 0x3F) | 0x80);  
+        } else if(c >= 0x000800 && c <= 0x00FFFF) {  
+            bytes.push(((c >> 12) & 0x0F) | 0xE0);  
+            bytes.push(((c >> 6) & 0x3F) | 0x80);  
+            bytes.push((c & 0x3F) | 0x80);  
+        } else if(c >= 0x000080 && c <= 0x0007FF) {  
+            bytes.push(((c >> 6) & 0x1F) | 0xC0);  
+            bytes.push((c & 0x3F) | 0x80);  
+        } else {  
+            bytes.push(c & 0xFF);  
+        }  
+    }  
+    return bytes;  
+}  
+
+function bt1(){
+m1=$("#opinions").val().split("\n");
+m1.forEach(function(e,i,a){
+	a[i]=e.trim();
+});
+key=s2b($("#key").val());
+m1.forEach(function(e,i,a){
+	a[i]=s2b(e);
+});
+m1.forEach(function(e,i,a){
+	a[i].forEach(function(ee,ii,aa){
+		aa[ii]=key[ii%key.length]^ee;
+	});
+});
+/*m1.forEach(function(e,i,a){
+	a[i]=b2s(e);
+});
+m1.forEach(function(e,i,a){
+	a[i]=Base64.encode(m1);
+});*/
+$("#ciph1").val(Base64.encode(JSON.stringify(m1)));
+console.log(m1);
+}
+comp1=0;
+
+function bt2(){
+key=s2b($("#key").val());
+m2=JSON.parse(Base64.decode($("#ciph2").val()));
+console.log(m2);
+/*m2.forEach(function(e,i,a){
+	a[i]=Base64.decode(m2);
+});
+m2.forEach(function(e,i,a){
+	a[i]=s2b(e);
+});*/
+m2.forEach(function(e,i,a){
+	a[i].forEach(function(ee,ii,aa){
+		aa[ii]=key[ii%key.length]^ee;
+	});
+});
+/*m2.forEach(function(e,i,a){
+	a[i]=b2s(e);
+});
+comp1=m2;
+m2.forEach(function(e,i,a){
+	a[i]=Base64.encode(m2);
+});*/
+comp1=m2;
+$("#ciph3").val(Base64.encode(JSON.stringify(m2)));
+console.log(m2);
+}
+
+function bt3(){
+	m3=JSON.parse(Base64.decode($("#ciph4").val()));
+	/*m3.forEach(function(e,i,a){
+		a[i]=Base64.decode(m3);
+	});*/
+	comp2=m3;
+	acc=0;
+	comp1.forEach(function(e,i,a){
+		comp2.forEach(function(ee,ii,aa){
+			if(ee.toString()==e.toString()){
+				acc++;
+			}
+		});
+	});
+	len=comp2.length;
+	len2=comp1.length;
+	eff=acc*Math.sqrt(len*len2);
+	$("#result").html("相同点"+acc+"个，匹配分数为"+eff);
+}
+</script>
+</html>
